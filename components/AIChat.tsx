@@ -2,12 +2,23 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaRobot, FaPaperPlane, FaTimes, FaCommentDots } from "react-icons/fa";
+import { FaRobot, FaPaperPlane, FaTimes } from "react-icons/fa";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+}
+
+const ERROR_REPLY =
+  "Sorry, I could not complete that request. Please try again in a moment.";
+
+function createMessageId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 export default function AIChat() {
@@ -22,6 +33,7 @@ export default function AIChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -30,49 +42,116 @@ export default function AIChat() {
     }
   }, [messages]);
 
+  // Abort in-flight requests if component unmounts
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  const handleToggle = () => {
+    if (isOpen && abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+      setIsLoading(false);
+    }
+
+    setIsOpen((prev) => !prev);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    const userContent = input.trim();
 
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: input };
-    setMessages(prev => [...prev, userMsg]);
+    if (!userContent || isLoading) return;
+
+    const userMsg: Message = {
+      id: createMessageId(),
+      role: "user",
+      content: userContent,
+    };
+    const assistantId = createMessageId();
+    const assistantMsg: Message = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+    };
+
+    const requestMessages = [...messages, userMsg].map(({ role, content }) => ({
+      role,
+      content,
+    }));
+
+    setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput("");
     setIsLoading(true);
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      // Simulate network request to our mock API
       const response = await fetch("/api/chat", {
         method: "POST",
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages: requestMessages }),
+        signal: controller.signal,
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Request failed with status ${response.status}`);
+      }
 
       if (!response.body) throw new Error("No response body");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let assistantMsg: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: "" };
-      
-      setMessages(prev => [...prev, assistantMsg]);
+      let assistantContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
-        assistantMsg.content += chunk;
-        
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = { ...assistantMsg };
-          return newMessages;
-        });
+        assistantContent += chunk;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantId ? { ...msg, content: assistantContent } : msg
+          )
+        );
       }
 
+      const tailChunk = decoder.decode();
+      if (tailChunk) {
+        assistantContent += tailChunk;
+      }
+
+      if (!assistantContent.trim()) {
+        throw new Error("Assistant returned an empty response");
+      }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
       console.error(error);
-      setMessages(prev => [...prev, { id: "error", role: "assistant", content: "Sorry, my neural link is offline. Please try again later." }]);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantId ? { ...msg, content: ERROR_REPLY } : msg
+        )
+      );
     } finally {
-      setIsLoading(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -80,7 +159,7 @@ export default function AIChat() {
     <>
       {/* Floating Toggle Button */}
       <motion.button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-neon-cyan/20 backdrop-blur-md border border-neon-cyan/50 text-neon-cyan flex items-center justify-center shadow-[0_0_20px_rgba(0,255,255,0.3)] hover:shadow-[0_0_30px_rgba(0,255,255,0.5)] transition-shadow group"

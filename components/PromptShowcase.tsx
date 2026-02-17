@@ -102,7 +102,7 @@ export default function PromptShowcase() {
                   
                   <div className="bg-black/50 p-4 rounded-lg border border-white/10 font-mono text-sm text-gray-300 relative overflow-hidden">
                     <p className="line-clamp-4 italic">
-                      "{item.prompt}"
+                      &quot;{item.prompt}&quot;
                     </p>
                   </div>
                 </div>

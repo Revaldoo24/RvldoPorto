@@ -3,10 +3,30 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+const copy = {
+  en: {
+    work: "Work",
+    certification: "Certification",
+    about: "About",
+    contact: "Contact",
+    role: "System Architect. Precision Developer.",
+  },
+  id: {
+    work: "Karya",
+    certification: "Sertifikasi",
+    about: "Tentang",
+    contact: "Kontak",
+    role: "Arsitek Sistem. Precision Developer.",
+  },
+} as const;
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { locale, setLocale } = useLanguage();
+  const t = copy[locale];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,9 +53,10 @@ export default function Navbar() {
   }, [isMenuOpen]);
 
   const menuItems = [
-    { label: "Work", href: "#work" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
+    { label: t.work, href: "#work" },
+    { label: t.certification, href: "#certification" },
+    { label: t.about, href: "#about" },
+    { label: t.contact, href: "#contact" },
   ];
 
   return (
@@ -54,40 +75,68 @@ export default function Navbar() {
             <span className="text-neon-green">.</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {menuItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="text-steel hover:text-neon-green transition-colors text-sm tracking-wide"
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="relative w-10 h-10 flex items-center justify-center group"
-            aria-label="Toggle menu"
-          >
-            <div className="w-6 flex flex-col space-y-1.5">
-              <motion.span
-                animate={isMenuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
-                className="block h-0.5 w-full bg-neon-green"
-              />
-              <motion.span
-                animate={isMenuOpen ? { opacity: 0 } : { opacity: 1 }}
-                className="block h-0.5 w-full bg-neon-green"
-              />
-              <motion.span
-                animate={isMenuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-                className="block h-0.5 w-full bg-neon-green"
-              />
+          <div className="flex items-center gap-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              {menuItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="text-steel hover:text-neon-green transition-colors text-sm tracking-wide"
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
-          </button>
+
+            {/* Language Toggle */}
+            <div className="inline-flex items-center rounded-full border border-white/15 bg-white/5 p-1">
+              <button
+                onClick={() => setLocale("id")}
+                className={`px-2 py-1 text-xs font-mono rounded-full transition-colors ${
+                  locale === "id"
+                    ? "bg-neon-green text-terminal-black"
+                    : "text-steel hover:text-white"
+                }`}
+                aria-label="Switch language to Indonesian"
+              >
+                ID
+              </button>
+              <button
+                onClick={() => setLocale("en")}
+                className={`px-2 py-1 text-xs font-mono rounded-full transition-colors ${
+                  locale === "en"
+                    ? "bg-neon-green text-terminal-black"
+                    : "text-steel hover:text-white"
+                }`}
+                aria-label="Switch language to English"
+              >
+                EN
+              </button>
+            </div>
+
+            {/* Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="relative w-10 h-10 flex items-center justify-center group"
+              aria-label="Toggle menu"
+            >
+              <div className="w-6 flex flex-col space-y-1.5">
+                <motion.span
+                  animate={isMenuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+                  className="block h-0.5 w-full bg-neon-green"
+                />
+                <motion.span
+                  animate={isMenuOpen ? { opacity: 0 } : { opacity: 1 }}
+                  className="block h-0.5 w-full bg-neon-green"
+                />
+                <motion.span
+                  animate={isMenuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+                  className="block h-0.5 w-full bg-neon-green"
+                />
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Scroll progress indicator */}
@@ -164,7 +213,7 @@ export default function Navbar() {
               className="absolute bottom-8 left-8 right-8 text-center text-steel text-sm"
             >
               <p>Revaldo Putra Anggara</p>
-              <p className="text-xs mt-2">System Architect. Precision Developer.</p>
+              <p className="text-xs mt-2">{t.role}</p>
             </motion.div>
           </motion.div>
         )}

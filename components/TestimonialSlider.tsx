@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Testimonial {
   id: number;
@@ -11,34 +12,85 @@ interface Testimonial {
   content: string;
 }
 
-const testimonials: Testimonial[] = [
-  {
-    id: 1,
-    name: "Sarah Chen",
-    role: "CTO",
-    company: "TechFlow Inc",
-    content:
-      "Revaldo's architectural decisions saved us months of refactoring. His systems thinking is unmatched.",
+const testimonialsByLocale: Record<"en" | "id", Testimonial[]> = {
+  en: [
+    {
+      id: 1,
+      name: "Sarah Chen",
+      role: "CTO",
+      company: "TechFlow Inc",
+      content:
+        "Revaldo's architectural decisions saved us months of refactoring. His systems thinking is unmatched.",
+    },
+    {
+      id: 2,
+      name: "Marcus Rodriguez",
+      role: "VP Engineering",
+      company: "CloudScale",
+      content:
+        "A rare engineer who balances technical excellence with business pragmatism. Delivered a platform handling 10M users.",
+    },
+    {
+      id: 3,
+      name: "Emily Watson",
+      role: "Product Lead",
+      company: "DataSync",
+      content:
+        "Transformed our proof-of-concept into a production system in record time. Precision meets velocity.",
+    },
+  ],
+  id: [
+    {
+      id: 1,
+      name: "Sarah Chen",
+      role: "CTO",
+      company: "TechFlow Inc",
+      content:
+        "Keputusan arsitektur Revaldo menghemat berbulan-bulan refactor. Cara berpikir sistemnya benar-benar unggul.",
+    },
+    {
+      id: 2,
+      name: "Marcus Rodriguez",
+      role: "VP Engineering",
+      company: "CloudScale",
+      content:
+        "Engineer langka yang menyeimbangkan excellence teknis dan pragmatisme bisnis. Berhasil deliver platform untuk 10M pengguna.",
+    },
+    {
+      id: 3,
+      name: "Emily Watson",
+      role: "Product Lead",
+      company: "DataSync",
+      content:
+        "Mengubah proof-of-concept kami menjadi sistem production dalam waktu sangat cepat. Presisi bertemu kecepatan.",
+    },
+  ],
+};
+
+const copy = {
+  en: {
+    title: "Trusted By Leaders",
+    subtitle: "Collaborations that drive results.",
+    swipeHint: "Swipe or use arrows to navigate",
+    prevLabel: "Previous testimonial",
+    nextLabel: "Next testimonial",
+    dotLabel: "Go to testimonial",
   },
-  {
-    id: 2,
-    name: "Marcus Rodriguez",
-    role: "VP Engineering",
-    company: "CloudScale",
-    content:
-      "A rare engineer who balances technical excellence with business pragmatism. Delivered a platform handling 10M users.",
+  id: {
+    title: "Dipercaya Para Leader",
+    subtitle: "Kolaborasi yang menghasilkan dampak.",
+    swipeHint: "Geser atau gunakan panah untuk navigasi",
+    prevLabel: "Testimoni sebelumnya",
+    nextLabel: "Testimoni berikutnya",
+    dotLabel: "Pergi ke testimoni",
   },
-  {
-    id: 3,
-    name: "Emily Watson",
-    role: "Product Lead",
-    company: "DataSync",
-    content:
-      "Transformed our proof-of-concept into a production system in record time. Precision meets velocity.",
-  },
-];
+} as const;
 
 export default function TestimonialSlider() {
+  const { locale } = useLanguage();
+  const t = copy[locale];
+  const testimonials = testimonialsByLocale[locale];
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleNext = () => {
@@ -50,9 +102,11 @@ export default function TestimonialSlider() {
   };
 
   return (
-    <section id="about" className="min-h-[100dvh] bg-terminal-gray py-20 px-6 flex items-center">
+    <section
+      id="about"
+      className="min-h-[100dvh] bg-terminal-gray py-20 px-6 flex items-center"
+    >
       <div className="max-w-4xl mx-auto w-full">
-        {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -61,14 +115,11 @@ export default function TestimonialSlider() {
           className="mb-12 text-center"
         >
           <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
-            Trusted By Leaders
+            {t.title}
           </h2>
-          <p className="text-steel text-lg">
-            Collaborations that drive results.
-          </p>
+          <p className="text-steel text-lg">{t.subtitle}</p>
         </motion.div>
 
-        {/* Testimonial slider */}
         <div className="relative">
           <AnimatePresence mode="wait">
             <motion.div
@@ -91,7 +142,8 @@ export default function TestimonialSlider() {
                     {testimonials[currentIndex].name}
                   </div>
                   <div className="text-steel text-sm">
-                    {testimonials[currentIndex].role} · {testimonials[currentIndex].company}
+                    {testimonials[currentIndex].role} -{" "}
+                    {testimonials[currentIndex].company}
                   </div>
                 </div>
 
@@ -101,11 +153,9 @@ export default function TestimonialSlider() {
                       key={index}
                       onClick={() => setCurrentIndex(index)}
                       className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentIndex
-                          ? "bg-neon-cyan w-8"
-                          : "bg-steel/30"
+                        index === currentIndex ? "bg-neon-cyan w-8" : "bg-steel/30"
                       }`}
-                      aria-label={`Go to testimonial ${index + 1}`}
+                      aria-label={`${t.dotLabel} ${index + 1}`}
                     />
                   ))}
                 </div>
@@ -113,12 +163,11 @@ export default function TestimonialSlider() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation buttons */}
           <div className="flex items-center justify-center mt-8 space-x-4">
             <button
               onClick={handlePrev}
               className="w-12 h-12 rounded-full border border-neon-cyan/30 flex items-center justify-center hover:bg-neon-cyan/10 transition-colors"
-              aria-label="Previous testimonial"
+              aria-label={t.prevLabel}
             >
               <svg
                 className="w-6 h-6 text-neon-cyan"
@@ -138,7 +187,7 @@ export default function TestimonialSlider() {
             <button
               onClick={handleNext}
               className="w-12 h-12 rounded-full border border-neon-cyan/30 flex items-center justify-center hover:bg-neon-cyan/10 transition-colors"
-              aria-label="Next testimonial"
+              aria-label={t.nextLabel}
             >
               <svg
                 className="w-6 h-6 text-neon-cyan"
@@ -156,9 +205,8 @@ export default function TestimonialSlider() {
             </button>
           </div>
 
-          {/* Swipe hint for mobile */}
           <div className="mt-6 text-center text-steel text-sm md:hidden">
-            Swipe or use arrows to navigate
+            {t.swipeHint}
           </div>
         </div>
       </div>

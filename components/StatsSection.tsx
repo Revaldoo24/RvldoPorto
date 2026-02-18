@@ -2,20 +2,44 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Stat {
-  label: string;
+  key: "projects" | "experience" | "satisfaction" | "commits";
   value: number;
   suffix: string;
   prefix?: string;
 }
 
 const stats: Stat[] = [
-  { label: "Projects Delivered", value: 50, suffix: "+" },
-  { label: "Years Experience", value: 5, suffix: "+" },
-  { label: "Client Satisfaction", value: 99, suffix: "%", prefix: "" },
-  { label: "Code Commits", value: 10000, suffix: "+" },
+  { key: "projects", value: 50, suffix: "+" },
+  { key: "experience", value: 5, suffix: "+" },
+  { key: "satisfaction", value: 99, suffix: "%", prefix: "" },
+  { key: "commits", value: 10000, suffix: "+" },
 ];
+
+const copy = {
+  en: {
+    title: "Impact By Numbers",
+    subtitle: "Measurable results, engineered precision.",
+    labels: {
+      projects: "Projects Delivered",
+      experience: "Years Experience",
+      satisfaction: "Client Satisfaction",
+      commits: "Code Commits",
+    },
+  },
+  id: {
+    title: "Dampak Dalam Angka",
+    subtitle: "Hasil terukur, dengan presisi engineering.",
+    labels: {
+      projects: "Proyek Selesai",
+      experience: "Tahun Pengalaman",
+      satisfaction: "Kepuasan Klien",
+      commits: "Commit Kode",
+    },
+  },
+} as const;
 
 function CountUpAnimation({ value, suffix, prefix = "" }: { value: number; suffix: string; prefix?: string }) {
   const [count, setCount] = useState(0);
@@ -53,6 +77,9 @@ function CountUpAnimation({ value, suffix, prefix = "" }: { value: number; suffi
 }
 
 export default function StatsSection() {
+  const { locale } = useLanguage();
+  const t = copy[locale];
+
   return (
     <section className="min-h-screen bg-terminal-black py-20 px-6 flex items-center">
       <div className="max-w-7xl mx-auto w-full">
@@ -65,10 +92,10 @@ export default function StatsSection() {
           className="mb-16 text-center"
         >
           <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
-            Impact By Numbers
+            {t.title}
           </h2>
           <p className="text-steel text-lg">
-            Measurable results, engineered precision.
+            {t.subtitle}
           </p>
         </motion.div>
 
@@ -76,7 +103,7 @@ export default function StatsSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           {stats.map((stat, index) => (
             <motion.div
-              key={stat.label}
+              key={stat.key}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -89,7 +116,7 @@ export default function StatsSection() {
                 prefix={stat.prefix}
               />
               <div className="mt-4 text-steel text-lg tracking-wide">
-                {stat.label}
+                {t.labels[stat.key]}
               </div>
             </motion.div>
           ))}

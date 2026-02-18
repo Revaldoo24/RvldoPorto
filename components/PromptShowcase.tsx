@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { FaCopy, FaCheck, FaMagic } from "react-icons/fa";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PromptItem {
   id: number;
@@ -30,7 +31,29 @@ const prompts: PromptItem[] = [
   }
 ];
 
+const copy = {
+  en: {
+    badge: "PROMPT ENGINEERING",
+    headingPrefix: "Commanding",
+    headingHighlight: "Intelligence",
+    subtitle:
+      "Translating human intent into machine creativity. Hover to reveal the source code of imagination.",
+    copyLabel: "Copy Prompt",
+  },
+  id: {
+    badge: "PROMPT ENGINEERING",
+    headingPrefix: "Mengendalikan",
+    headingHighlight: "Inteligensi",
+    subtitle:
+      "Menerjemahkan niat manusia menjadi kreativitas mesin. Hover untuk melihat source code dari imajinasi.",
+    copyLabel: "Salin Prompt",
+  },
+} as const;
+
 export default function PromptShowcase() {
+  const { locale } = useLanguage();
+  const t = copy[locale];
+
   const [activeId, setActiveId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
@@ -51,13 +74,13 @@ export default function PromptShowcase() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple mb-6">
             <FaMagic className="w-4 h-4" />
-            <span className="text-sm font-mono tracking-wider">PROMPT ENGINEERING</span>
+            <span className="text-sm font-mono tracking-wider">{t.badge}</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Commanding <span className="text-neon-purple">Intelligence</span>
+            {t.headingPrefix} <span className="text-neon-purple">{t.headingHighlight}</span>
           </h2>
           <p className="text-steel text-lg max-w-2xl mx-auto">
-            Translating human intent into machine creativity. Hover to reveal the source code of imagination.
+            {t.subtitle}
           </p>
         </motion.div>
 
@@ -76,7 +99,7 @@ export default function PromptShowcase() {
                 src={item.image}
                 alt={item.title}
                 fill
-                className="object-cover transition-transform duration-700 group-hover:scale-110 group-hover:blur-sm"
+                className="object-cover scale-[1.35] transition-transform duration-700 group-hover:blur-sm"
               />
               
               {/* Overlay */}
@@ -92,7 +115,7 @@ export default function PromptShowcase() {
                         handleCopy(item.prompt, item.id);
                       }}
                       className="text-steel hover:text-white transition-colors"
-                      title="Copy Prompt"
+                      title={t.copyLabel}
                     >
                       {copiedId === item.id ? <FaCheck className="text-green-400" /> : <FaCopy />}
                     </button>

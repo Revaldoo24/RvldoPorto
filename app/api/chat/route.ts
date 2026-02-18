@@ -1,26 +1,48 @@
 export const runtime = "edge";
 
+type Locale = "id" | "en";
+
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
-const ASSISTANT_FALLBACK =
-  "Hi, I am Revaldo's AI Assistant. I can help with his stack, projects, availability, and contact details.";
+const ASSISTANT_FALLBACK: Record<Locale, string> = {
+  en: "Hi, I am Revaldo's AI Assistant. I can help with his stack, projects, availability, and contact details.",
+  id: "Halo, saya AI Assistant Revaldo. Saya bisa membantu dengan stack, proyek, ketersediaan, dan info kontak.",
+};
 
-const SYSTEM_PROMPT = [
-  "You are Revaldo Putra Anggara's portfolio assistant.",
-  "Keep answers concise, clear, and practical.",
-  "Only claim details that are consistent with this portfolio:",
-  "- Role: System Architect and Precision Developer",
-  "- Stack: Next.js, React, TypeScript, Python, Tailwind, AI engineering tools",
-  "- Focus: scalable systems, performance, product-minded engineering",
-  "- Contact channel: revaldo@example.com, LinkedIn",
-  "If asked outside scope, be transparent and redirect to contact.",
-].join("\n");
+const SYSTEM_PROMPTS: Record<Locale, string> = {
+  en: [
+    "You are Revaldo Putra Anggara's portfolio assistant.",
+    "Keep answers concise, clear, and practical.",
+    "Only claim details that are consistent with this portfolio:",
+    "- Role: System Architect and Precision Developer",
+    "- Stack: Next.js, React, TypeScript, Python, Tailwind, AI engineering tools",
+    "- Focus: scalable systems, performance, product-minded engineering",
+    "- Contact channel: revaldo@example.com, LinkedIn",
+    "If asked outside scope, be transparent and redirect to contact.",
+    "Respond in English.",
+  ].join("\n"),
+  id: [
+    "You are Revaldo Putra Anggara's portfolio assistant.",
+    "Jawab singkat, jelas, dan praktis.",
+    "Hanya klaim detail yang konsisten dengan portfolio ini:",
+    "- Peran: System Architect dan Precision Developer",
+    "- Stack: Next.js, React, TypeScript, Python, Tailwind, AI engineering tools",
+    "- Fokus: scalable systems, performance, product-minded engineering",
+    "- Kontak: revaldo@example.com, LinkedIn",
+    "Jika pertanyaan di luar konteks, jelaskan keterbatasan lalu arahkan ke kontak.",
+    "Selalu jawab dalam Bahasa Indonesia.",
+  ].join("\n"),
+};
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeLocale(input: unknown): Locale {
+  return input === "id" ? "id" : "en";
 }
 
 function streamText(text: string) {
@@ -64,15 +86,17 @@ function normalizeMessages(input: unknown): ChatMessage[] {
     .slice(-12);
 }
 
-function buildFallbackReply(messages: ChatMessage[]) {
+function buildFallbackReply(messages: ChatMessage[], locale: Locale) {
   const lastUserMessage =
     [...messages].reverse().find((msg) => msg.role === "user")?.content ?? "";
   const text = lastUserMessage.toLowerCase();
 
-  if (!text) return ASSISTANT_FALLBACK;
+  if (!text) return ASSISTANT_FALLBACK[locale];
 
   if (/(hello|hi|hey|halo|hai|yo|sup)/.test(text)) {
-    return "Hi. Ask me about Revaldo's stack, selected work, availability, or contact and I will help quickly.";
+    return locale === "id"
+      ? "Halo. Tanyakan stack Revaldo, karya pilihan, ketersediaan, atau kontak, dan saya akan bantu cepat."
+      : "Hi. Ask me about Revaldo's stack, selected work, availability, or contact and I will help quickly.";
   }
 
   if (
@@ -80,33 +104,51 @@ function buildFallbackReply(messages: ChatMessage[]) {
       text
     )
   ) {
-    return "Revaldo's core stack is Next.js, React, TypeScript, Python, and Tailwind. He also works with AI engineering tooling and performance-focused web architecture.";
+    return locale === "id"
+      ? "Stack utama Revaldo adalah Next.js, React, TypeScript, Python, dan Tailwind. Ia juga aktif menggunakan tooling AI engineering serta arsitektur web berfokus performa."
+      : "Revaldo's core stack is Next.js, React, TypeScript, Python, and Tailwind. He also works with AI engineering tooling and performance-focused web architecture.";
   }
 
   if (/(project|work|portfolio|case study|proyek|pengalaman)/.test(text)) {
-    return "Revaldo builds scalable products such as real-time analytics systems, distributed processing pipelines, and edge-ready web platforms with strong performance metrics.";
+    return locale === "id"
+      ? "Revaldo membangun produk scalable seperti sistem analitik real-time, pipeline pemrosesan terdistribusi, dan platform web siap edge dengan metrik performa kuat."
+      : "Revaldo builds scalable products such as real-time analytics systems, distributed processing pipelines, and edge-ready web platforms with strong performance metrics.";
   }
 
-  if (/(hire|available|availability|freelance|collab|kerja sama|tersedia)/.test(text)) {
-    return "Revaldo is open to discussing new projects. Share your scope, timeline, and goals, then continue through email for a proper plan.";
+  if (
+    /(hire|available|availability|freelance|collab|kerja sama|tersedia)/.test(
+      text
+    )
+  ) {
+    return locale === "id"
+      ? "Revaldo terbuka untuk diskusi proyek baru. Kirim ruang lingkup, timeline, dan target Anda, lalu lanjutkan lewat email untuk rencana yang tepat."
+      : "Revaldo is open to discussing new projects. Share your scope, timeline, and goals, then continue through email for a proper plan.";
   }
 
   if (/(contact|email|linkedin|github|kontak|hubungi)/.test(text)) {
-    return "You can contact Revaldo at revaldo@example.com and connect via LinkedIn. Include your project scope, target timeline, and expected outcomes.";
+    return locale === "id"
+      ? "Anda bisa menghubungi Revaldo di revaldo@example.com dan terhubung lewat LinkedIn. Sertakan scope proyek, target timeline, dan hasil yang diinginkan."
+      : "You can contact Revaldo at revaldo@example.com and connect via LinkedIn. Include your project scope, target timeline, and expected outcomes.";
   }
 
   if (/(rate|price|cost|budget|harga|tarif)/.test(text)) {
-    return "Rates depend on scope, timeline, and system complexity. Send project details to revaldo@example.com for a tailored estimate.";
+    return locale === "id"
+      ? "Rate bergantung pada scope, timeline, dan kompleksitas sistem. Kirim detail proyek ke revaldo@example.com untuk estimasi yang sesuai."
+      : "Rates depend on scope, timeline, and system complexity. Send project details to revaldo@example.com for a tailored estimate.";
   }
 
   if (/(about|who are you|siapa|profil|background)/.test(text)) {
-    return "Revaldo Putra Anggara is a system architect and precision-focused developer. He combines product thinking with scalable engineering and AI-enabled workflows.";
+    return locale === "id"
+      ? "Revaldo Putra Anggara adalah system architect dan precision-focused developer. Ia memadukan product thinking dengan engineering scalable dan workflow berbasis AI."
+      : "Revaldo Putra Anggara is a system architect and precision-focused developer. He combines product thinking with scalable engineering and AI-enabled workflows.";
   }
 
-  return "I can help with Revaldo's stack, work, collaboration availability, and contact details. Tell me what you need and I will answer directly.";
+  return locale === "id"
+    ? "Saya bisa membantu tentang stack, karya, ketersediaan kolaborasi, dan kontak Revaldo. Sampaikan kebutuhan Anda, saya jawab langsung."
+    : "I can help with Revaldo's stack, work, collaboration availability, and contact details. Tell me what you need and I will answer directly.";
 }
 
-async function generateModelReply(messages: ChatMessage[]) {
+async function generateModelReply(messages: ChatMessage[], locale: Locale) {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
@@ -124,10 +166,7 @@ async function generateModelReply(messages: ChatMessage[]) {
         model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
         temperature: 0.4,
         max_tokens: 350,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...messages,
-        ],
+        messages: [{ role: "system", content: SYSTEM_PROMPTS[locale] }, ...messages],
       }),
     });
 
@@ -150,19 +189,27 @@ async function generateModelReply(messages: ChatMessage[]) {
 }
 
 export async function POST(req: Request) {
+  let locale: Locale = "en";
+
   try {
     const body = await req.json();
+    locale = normalizeLocale(body?.locale);
     const messages = normalizeMessages(body?.messages);
 
     if (messages.length === 0) {
-      return new Response("Please send at least one valid message.", {
-        status: 400,
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      });
+      return new Response(
+        locale === "id"
+          ? "Silakan kirim minimal satu pesan yang valid."
+          : "Please send at least one valid message.",
+        {
+          status: 400,
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        }
+      );
     }
 
-    const modelReply = await generateModelReply(messages);
-    const finalReply = modelReply ?? buildFallbackReply(messages);
+    const modelReply = await generateModelReply(messages, locale);
+    const finalReply = modelReply ?? buildFallbackReply(messages, locale);
 
     return new Response(streamText(finalReply), {
       headers: {
@@ -173,7 +220,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Chat route failed:", error);
 
-    return new Response(streamText(ASSISTANT_FALLBACK), {
+    return new Response(streamText(ASSISTANT_FALLBACK[locale]), {
       status: 200,
       headers: {
         "Content-Type": "text/plain; charset=utf-8",

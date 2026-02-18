@@ -1,10 +1,181 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+type FormState = {
+  name: string;
+  email: string;
+  projectType: string;
+  budget: string;
+  timeline: string;
+  message: string;
+  company: string;
+  startedAt: number;
+};
+
+type FormStatus = "idle" | "loading" | "success" | "error";
+
+const copy = {
+  en: {
+    lineOne: "Build Something",
+    lineTwo: "Exceptional",
+    descriptionLineOne: "Let's architect systems that scale.",
+    descriptionLineTwo: "Precision engineering for your vision.",
+    secondaryCta: "View Work",
+    formTitle: "Project Brief",
+    formSubtitle: "Share your scope and I will get back with a concrete plan.",
+    labels: {
+      name: "Name",
+      email: "Email",
+      projectType: "Project Type",
+      budget: "Budget",
+      timeline: "Timeline",
+      message: "Project Details",
+    },
+    placeholders: {
+      name: "Your name",
+      email: "you@example.com",
+      message: "What are you building, for whom, and by when?",
+    },
+    options: {
+      projectType: [
+        { value: "web_app", label: "Web Application" },
+        { value: "landing_page", label: "Landing Page" },
+        { value: "ecommerce", label: "E-Commerce Website" },
+        { value: "mobile_app", label: "Mobile App" },
+        { value: "ui_ux_design", label: "UI/UX Design" },
+        { value: "graphic_design", label: "Graphic Design" },
+        { value: "video_editing", label: "Video Editing" },
+        { value: "social_media", label: "Social Media Management" },
+        { value: "ads_management", label: "Ads Management" },
+        { value: "seo", label: "SEO Optimization" },
+        { value: "article_writing", label: "Article Writing" },
+        { value: "copywriting", label: "Copywriting" },
+        { value: "translation", label: "Translation / Localization" },
+        { value: "ai_system", label: "AI System" },
+        { value: "automation", label: "Automation" },
+        { value: "consulting", label: "Technical Consulting" },
+        { value: "other_digital", label: "Other Digital Freelance Work" },
+      ],
+      budget: [
+        { value: "lt_1k", label: "< $1K" },
+        { value: "1k_5k", label: "$1K - $5K" },
+        { value: "5k_20k", label: "$5K - $20K" },
+        { value: "20k_plus", label: "> $20K" },
+      ],
+      timeline: [
+        { value: "asap", label: "ASAP" },
+        { value: "2_4_weeks", label: "2 - 4 Weeks" },
+        { value: "1_3_months", label: "1 - 3 Months" },
+        { value: "flexible", label: "Flexible" },
+      ],
+    },
+    submit: {
+      idle: "Send Inquiry",
+      loading: "Sending...",
+    },
+    feedback: {
+      success: "Thanks. Your inquiry has been sent.",
+      genericError: "Failed to send inquiry. Please try again.",
+    },
+    contact: {
+      email: "Email",
+      github: "GitHub",
+      linkedin: "LinkedIn",
+    },
+  },
+  id: {
+    lineOne: "Bangun Sesuatu",
+    lineTwo: "Luar Biasa",
+    descriptionLineOne: "Mari rancang sistem yang scalable.",
+    descriptionLineTwo: "Engineering presisi untuk visi Anda.",
+    secondaryCta: "Lihat Karya",
+    formTitle: "Ringkasan Proyek",
+    formSubtitle:
+      "Kirim scope proyek Anda, saya akan balas dengan rencana yang jelas.",
+    labels: {
+      name: "Nama",
+      email: "Email",
+      projectType: "Tipe Proyek",
+      budget: "Budget",
+      timeline: "Timeline",
+      message: "Detail Proyek",
+    },
+    placeholders: {
+      name: "Nama Anda",
+      email: "anda@email.com",
+      message: "Apa yang ingin dibangun, untuk siapa, dan target waktunya?",
+    },
+    options: {
+      projectType: [
+        { value: "web_app", label: "Aplikasi Web" },
+        { value: "landing_page", label: "Landing Page" },
+        { value: "ecommerce", label: "Website E-Commerce" },
+        { value: "mobile_app", label: "Aplikasi Mobile" },
+        { value: "ui_ux_design", label: "Desain UI/UX" },
+        { value: "graphic_design", label: "Desain Grafis" },
+        { value: "video_editing", label: "Editing Video" },
+        { value: "social_media", label: "Manajemen Social Media" },
+        { value: "ads_management", label: "Manajemen Iklan" },
+        { value: "seo", label: "Optimasi SEO" },
+        { value: "article_writing", label: "Penulisan Artikel" },
+        { value: "copywriting", label: "Copywriting" },
+        { value: "translation", label: "Terjemahan / Lokalisasi" },
+        { value: "ai_system", label: "Sistem AI" },
+        { value: "automation", label: "Otomasi" },
+        { value: "consulting", label: "Konsultasi Teknis" },
+        { value: "other_digital", label: "Pekerjaan Freelance Digital Lainnya" },
+      ],
+      budget: [
+        { value: "lt_1k", label: "Rp300 - 900 Ribu" },
+        { value: "1k_5k", label: "Rp1 - 9 Juta" },
+        { value: "5k_20k", label: "Rp10 - 19 Juta" },
+        { value: "20k_plus", label: "Rp20 - 99 Juta" },
+      ],
+      timeline: [
+        { value: "asap", label: "Secepatnya" },
+        { value: "2_4_weeks", label: "2 - 4 Minggu" },
+        { value: "1_3_months", label: "1 - 3 Bulan" },
+        { value: "flexible", label: "Fleksibel" },
+      ],
+    },
+    submit: {
+      idle: "Kirim Inquiry",
+      loading: "Mengirim...",
+    },
+    feedback: {
+      success: "Terima kasih. Inquiry Anda sudah terkirim.",
+      genericError: "Gagal mengirim inquiry. Silakan coba lagi.",
+    },
+    contact: {
+      email: "Email",
+      github: "GitHub",
+      linkedin: "LinkedIn",
+    },
+  },
+} as const;
+
+const initialFormState = (): FormState => ({
+  name: "",
+  email: "",
+  projectType: "web_app",
+  budget: "1k_5k",
+  timeline: "2_4_weeks",
+  message: "",
+  company: "",
+  startedAt: Date.now(),
+});
 
 export default function CTASection() {
+  const { locale } = useLanguage();
+  const t = copy[locale];
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [form, setForm] = useState<FormState>(initialFormState);
+  const [status, setStatus] = useState<FormStatus>("idle");
+  const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,6 +192,7 @@ export default function CTASection() {
     const gridSize = 40;
     const lineColor = "rgba(0, 255, 148, 0.1)";
     let offset = 0;
+    let animationFrameId = 0;
 
     const drawGrid = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -30,7 +202,6 @@ export default function CTASection() {
       const width = canvas.offsetWidth;
       const height = canvas.offsetHeight;
 
-      // Vertical lines
       for (let x = offset; x < width; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -38,7 +209,6 @@ export default function CTASection() {
         ctx.stroke();
       }
 
-      // Horizontal lines
       for (let y = offset; y < height; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -46,9 +216,8 @@ export default function CTASection() {
         ctx.stroke();
       }
 
-      // Animate
       offset = (offset + 0.5) % gridSize;
-      requestAnimationFrame(drawGrid);
+      animationFrameId = requestAnimationFrame(drawGrid);
     };
 
     drawGrid();
@@ -60,18 +229,58 @@ export default function CTASection() {
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
+  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus("loading");
+    setFeedback("");
+
+    try {
+      const response = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          locale,
+        }),
+      });
+
+      const payload = (await response.json()) as { ok?: boolean; message?: string };
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.message || t.feedback.genericError);
+      }
+
+      setStatus("success");
+      setFeedback(payload.message || t.feedback.success);
+      setForm(initialFormState());
+    } catch (error) {
+      setStatus("error");
+      setFeedback(
+        error instanceof Error ? error.message : t.feedback.genericError
+      );
+    }
+  };
+
   return (
-    <section id="contact" className="relative min-h-screen bg-terminal-black py-20 px-6 flex items-center overflow-hidden">
-      {/* Animated grid background */}
+    <section
+      id="contact"
+      className="relative min-h-screen bg-terminal-black py-20 px-6 overflow-hidden"
+    >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
       />
 
-      {/* Neon motion line accent */}
       <motion.div
         className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-neon-green to-transparent"
         initial={{ x: "-100%" }}
@@ -83,110 +292,188 @@ export default function CTASection() {
         }}
       />
 
-      {/* Content */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center w-full">
+      <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-10 items-start">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
+          className="pt-2"
         >
-          <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-            Build Something
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
+            {t.lineOne}
             <br />
-            <span className="neon-glow-green">Exceptional</span>
+            <span className="neon-glow-green">{t.lineTwo}</span>
           </h2>
 
-          <p className="text-xl md:text-2xl text-steel mb-12 max-w-2xl mx-auto">
-            Let&apos;s architect systems that scale.
+          <p className="text-xl text-steel mb-10 max-w-xl">
+            {t.descriptionLineOne}
             <br />
-            Precision engineering for your vision.
+            {t.descriptionLineTwo}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <motion.a
-              href="mailto:revaldo@example.com"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-10 py-5 bg-neon-green text-terminal-black font-bold text-lg rounded-full hover:bg-neon-cyan transition-colors w-full sm:w-auto text-center"
-            >
-              Start a Project
-            </motion.a>
-
-            <motion.a
-              href="#work"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-10 py-5 bg-transparent neon-border-cyan text-neon-cyan font-semibold text-lg rounded-full hover:bg-neon-cyan/10 transition-colors w-full sm:w-auto text-center"
-            >
-              View Work
-            </motion.a>
-          </div>
-
-          {/* Contact info */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-            className="mt-16 flex flex-col md:flex-row items-center justify-center gap-8 text-steel"
+          <a
+            href="#work"
+            className="inline-flex items-center justify-center px-10 py-4 bg-transparent neon-border-cyan text-neon-cyan font-semibold text-lg rounded-full hover:bg-neon-cyan/10 transition-colors"
           >
+            {t.secondaryCta}
+          </a>
+
+          <div className="mt-12 flex flex-col gap-4 text-steel">
             <a
               href="mailto:revaldo@example.com"
-              className="hover:text-neon-green transition-colors flex items-center gap-2"
+              className="hover:text-neon-green transition-colors"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              revaldo@example.com
+              {t.contact.email}: revaldo@example.com
             </a>
-
             <a
               href="https://github.com"
-              className="hover:text-neon-green transition-colors flex items-center gap-2"
+              className="hover:text-neon-green transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg
-                className="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-              </svg>
-              GitHub
+              {t.contact.github}: github.com/Revaldoo24
             </a>
-
             <a
               href="https://linkedin.com"
-              className="hover:text-neon-green transition-colors flex items-center gap-2"
+              className="hover:text-neon-green transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg
-                className="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-              </svg>
-              LinkedIn
+              {t.contact.linkedin}: linkedin.com
             </a>
-          </motion.div>
+          </div>
         </motion.div>
+
+        <motion.form
+          onSubmit={handleSubmit}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="rounded-2xl border border-white/10 bg-terminal-gray/80 backdrop-blur-sm p-6 md:p-8"
+        >
+          <h3 className="text-2xl md:text-3xl font-semibold mb-2">{t.formTitle}</h3>
+          <p className="text-steel mb-6">{t.formSubtitle}</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <label className="text-sm">
+              <span className="text-steel">{t.labels.name}</span>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder={t.placeholders.name}
+                className="mt-1 w-full rounded-lg bg-terminal-black border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-neon-cyan"
+                required
+                minLength={2}
+                maxLength={80}
+              />
+            </label>
+
+            <label className="text-sm">
+              <span className="text-steel">{t.labels.email}</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                placeholder={t.placeholders.email}
+                className="mt-1 w-full rounded-lg bg-terminal-black border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-neon-cyan"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <label className="text-sm">
+              <span className="text-steel">{t.labels.projectType}</span>
+              <select
+                value={form.projectType}
+                onChange={(e) => updateField("projectType", e.target.value)}
+                className="mt-1 w-full rounded-lg bg-terminal-black border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-neon-cyan"
+              >
+                {t.options.projectType.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-sm">
+              <span className="text-steel">{t.labels.budget}</span>
+              <select
+                value={form.budget}
+                onChange={(e) => updateField("budget", e.target.value)}
+                className="mt-1 w-full rounded-lg bg-terminal-black border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-neon-cyan"
+              >
+                {t.options.budget.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-sm">
+              <span className="text-steel">{t.labels.timeline}</span>
+              <select
+                value={form.timeline}
+                onChange={(e) => updateField("timeline", e.target.value)}
+                className="mt-1 w-full rounded-lg bg-terminal-black border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-neon-cyan"
+              >
+                {t.options.timeline.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="text-sm block mb-4">
+            <span className="text-steel">{t.labels.message}</span>
+            <textarea
+              value={form.message}
+              onChange={(e) => updateField("message", e.target.value)}
+              placeholder={t.placeholders.message}
+              className="mt-1 w-full min-h-36 rounded-lg bg-terminal-black border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-neon-cyan resize-y"
+              required
+              minLength={20}
+              maxLength={2000}
+            />
+          </label>
+
+          <input
+            type="text"
+            value={form.company}
+            onChange={(e) => updateField("company", e.target.value)}
+            className="hidden"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
+
+          <button
+            type="submit"
+            disabled={status === "loading"}
+            className="w-full rounded-full bg-neon-green text-terminal-black font-bold py-3 hover:bg-neon-cyan transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {status === "loading" ? t.submit.loading : t.submit.idle}
+          </button>
+
+          {feedback && (
+            <p
+              className={`mt-4 text-sm ${
+                status === "success" ? "text-neon-green" : "text-red-400"
+              }`}
+            >
+              {feedback}
+            </p>
+          )}
+        </motion.form>
       </div>
 
-      {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-terminal-black to-transparent pointer-events-none" />
     </section>
   );

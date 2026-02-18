@@ -2,6 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+const copy = {
+  en: {
+    subtitle: "System Architect. Precision Developer.",
+    lineOne: "Logic over noise.",
+    lineTwo: "Structure builds clarity.",
+    headline: "Engineer with intention.",
+    subHeadline: "Let's build scalable systems.",
+    button: "Collaborate",
+  },
+  id: {
+    subtitle: "Arsitek Sistem. Precision Developer.",
+    lineOne: "Logika di atas distraksi.",
+    lineTwo: "Struktur menciptakan kejelasan.",
+    headline: "Bangun dengan intensi.",
+    subHeadline: "Mari membangun sistem yang scalable.",
+    button: "Kolaborasi",
+  },
+} as const;
 
 interface SequenceScrollProps {
   images: HTMLImageElement[];
@@ -14,6 +34,8 @@ export default function SequenceScroll({ images }: SequenceScrollProps) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  const { locale } = useLanguage();
+  const t = copy[locale];
 
   // Scroll animation
   const { scrollYProgress } = useScroll({
@@ -281,7 +303,7 @@ export default function SequenceScroll({ images }: SequenceScrollProps) {
               Revaldo Putra Anggara
             </h1>
             <p className="text-lg md:text-2xl text-steel tracking-wide">
-              System Architect. Precision Developer.
+              {t.subtitle}
             </p>
           </motion.div>
 
@@ -291,7 +313,7 @@ export default function SequenceScroll({ images }: SequenceScrollProps) {
             className="absolute left-8 md:left-16 max-w-md"
           >
             <h2 className="text-4xl md:text-6xl font-bold tracking-tight neon-glow-green">
-              Logic over noise.
+              {t.lineOne}
             </h2>
           </motion.div>
 
@@ -301,7 +323,7 @@ export default function SequenceScroll({ images }: SequenceScrollProps) {
             className="absolute right-8 md:right-16 max-w-md text-right"
           >
             <h2 className="text-4xl md:text-6xl font-bold tracking-tight neon-glow-cyan">
-              Structure builds clarity.
+              {t.lineTwo}
             </h2>
           </motion.div>
 
@@ -311,10 +333,10 @@ export default function SequenceScroll({ images }: SequenceScrollProps) {
             className="absolute text-center px-6"
           >
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">
-              Engineer with intention.
+              {t.headline}
               <br />
               <span className="text-steel text-2xl md:text-3xl">
-                Let&apos;s build scalable systems.
+                {t.subHeadline}
               </span>
             </h2>
             <motion.button
@@ -322,7 +344,7 @@ export default function SequenceScroll({ images }: SequenceScrollProps) {
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-transparent neon-border-green rounded-full text-neon-green font-semibold tracking-wide hover:bg-neon-green/10 transition-colors pointer-events-auto"
             >
-              Collaborate
+              {t.button}
             </motion.button>
           </motion.div>
         </div>

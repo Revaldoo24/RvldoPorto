@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot, FaPaperPlane, FaTimes } from "react-icons/fa";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Message {
   id: string;
@@ -10,8 +11,22 @@ interface Message {
   content: string;
 }
 
-const ERROR_REPLY =
-  "Sorry, I could not complete that request. Please try again in a moment.";
+const copy = {
+  en: {
+    welcome:
+      "Hello. I am Revaldo's digital assistant. Ask me about his stack, experience, or availability.",
+    error: "Sorry, I could not complete that request. Please try again in a moment.",
+    placeholder: "Ask me anything...",
+    headerTitle: "Revaldo AI",
+  },
+  id: {
+    welcome:
+      "Halo. Saya asisten digital Revaldo. Tanyakan tentang stack, pengalaman, atau ketersediaannya.",
+    error: "Maaf, saya belum bisa memproses permintaan itu. Coba lagi sebentar lagi.",
+    placeholder: "Tanya apa saja...",
+    headerTitle: "Revaldo AI",
+  },
+} as const;
 
 function createMessageId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -22,27 +37,43 @@ function createMessageId() {
 }
 
 export default function AIChat() {
+  const { locale } = useLanguage();
+  const t = copy[locale];
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! I'm Revaldo's Digital Assistant. Ask me about his tech stack, experience, or availability."
-    }
+      content: t.welcome,
+    },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Auto-scroll to bottom
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 0) {
+        return [{ id: "welcome", role: "assistant", content: t.welcome }];
+      }
+
+      const first = prev[0];
+      if (first.id === "welcome" && first.role === "assistant") {
+        return [{ ...first, content: t.welcome }, ...prev.slice(1)];
+      }
+
+      return prev;
+    });
+  }, [t.welcome]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Abort in-flight requests if component unmounts
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
@@ -96,7 +127,7 @@ export default function AIChat() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: requestMessages }),
+        body: JSON.stringify({ messages: requestMessages, locale }),
         signal: controller.signal,
       });
 
@@ -141,7 +172,7 @@ export default function AIChat() {
       console.error(error);
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === assistantId ? { ...msg, content: ERROR_REPLY } : msg
+          msg.id === assistantId ? { ...msg, content: t.error } : msg
         )
       );
     } finally {
@@ -157,7 +188,6 @@ export default function AIChat() {
 
   return (
     <>
-      {/* Floating Toggle Button */}
       <motion.button
         onClick={handleToggle}
         whileHover={{ scale: 1.1 }}
@@ -168,7 +198,6 @@ export default function AIChat() {
         {isOpen ? <FaTimes className="text-xl" /> : <FaRobot className="text-xl" />}
       </motion.button>
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -177,17 +206,15 @@ export default function AIChat() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="fixed bottom-24 right-6 z-50 w-80 md:w-96 h-[500px] bg-terminal-black/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Header */}
             <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm font-semibold text-white">Revaldo AI</span>
+                <span className="text-sm font-semibold text-white">{t.headerTitle}</span>
               </div>
               <span className="text-xs text-steel font-mono">v1.0 BETA</span>
             </div>
 
-            {/* Messages Area */}
-            <div 
+            <div
               ref={scrollRef}
               className="flex-1 p-4 overflow-y-auto space-y-4 font-mono text-sm scrollbar-thin scrollbar-thumb-white/10"
             >
@@ -210,22 +237,30 @@ export default function AIChat() {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white/5 p-3 rounded-2xl rounded-bl-none border border-white/5 flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-steel rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 bg-steel rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 bg-steel rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span
+                      className="w-1.5 h-1.5 bg-steel rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-1.5 h-1.5 bg-steel rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-1.5 h-1.5 bg-steel rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Input Area */}
             <form onSubmit={handleSubmit} className="p-4 border-t border-white/10 bg-white/5">
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask me anything..."
+                  placeholder={t.placeholder}
                   className="flex-1 bg-transparent text-white placeholder-steel text-sm focus:outline-none"
                   autoFocus
                 />

@@ -18,27 +18,38 @@ export function usePreloadImages(
   const [images, setImages] = useState<HTMLImageElement[]>([]);
 
   useEffect(() => {
+    let isCancelled = false;
     const loadedImages: HTMLImageElement[] = [];
+    const imagePool: HTMLImageElement[] = [];
     let loadedCount = 0;
+
+    setProgress(0);
+    setIsLoaded(false);
+    setImages([]);
 
     const loadImage = (index: number): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
+        imagePool.push(img);
         const filename = `ezgif-frame-${String(index).padStart(3, "0")}.${format}`;
-        img.src = `${basePath}/${filename}`;
+        const src = `${basePath}/${filename}`;
 
         img.onload = () => {
+          if (isCancelled) return;
           loadedCount++;
           setProgress((loadedCount / count) * 100);
           resolve(img);
         };
 
         img.onerror = () => {
+          if (isCancelled) return;
           console.error(`Failed to load image: ${img.src}`);
           loadedCount++;
           setProgress((loadedCount / count) * 100);
           reject(new Error(`Failed to load ${filename}`));
         };
+
+        img.src = src;
       });
     };
 
@@ -51,6 +62,8 @@ export function usePreloadImages(
 
       try {
         const results = await Promise.allSettled(promises);
+        if (isCancelled) return;
+
         results.forEach((result) => {
           if (result.status === "fulfilled") {
             loadedImages.push(result.value);
@@ -69,7 +82,10 @@ export function usePreloadImages(
 
     // Cleanup
     return () => {
-      loadedImages.forEach((img) => {
+      isCancelled = true;
+      imagePool.forEach((img) => {
+        img.onload = null;
+        img.onerror = null;
         img.src = "";
       });
     };

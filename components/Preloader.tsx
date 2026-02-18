@@ -2,6 +2,16 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+const copy = {
+  en: {
+    bootText: "INITIALIZING SYSTEM...",
+  },
+  id: {
+    bootText: "MENGINISIALISASI SISTEM...",
+  },
+} as const;
 
 interface PreloaderProps {
   progress: number;
@@ -10,9 +20,12 @@ interface PreloaderProps {
 }
 
 export default function Preloader({ progress, isLoaded, onComplete }: PreloaderProps) {
+  const { locale } = useLanguage();
+  const t = copy[locale];
+
   const [showCursor, setShowCursor] = useState(true);
   const [bootText, setBootText] = useState("");
-  const fullText = "INITIALIZING SYSTEM...";
+  const fullText = t.bootText;
 
   useEffect(() => {
     // Cursor blink
@@ -35,7 +48,7 @@ export default function Preloader({ progress, isLoaded, onComplete }: PreloaderP
       clearInterval(cursorInterval);
       clearInterval(typeInterval);
     };
-  }, []);
+  }, [fullText]);
 
   useEffect(() => {
     if (isLoaded && progress >= 100) {
